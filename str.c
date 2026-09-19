@@ -87,7 +87,7 @@ if (nchars == -1) {
   return s;
 }
 
-Str s_cria_numero(double num)
+Str s_cria_número(double num)
 {
     char texto[400];
 
