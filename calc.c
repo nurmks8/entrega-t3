@@ -3,11 +3,13 @@
 #include <stdlib.h>
 #include "dicionario.h"
 
+// Compara duas chaves e informa se possuem o mesmo conteúdo.
 static bool chave_igual (chave_t a, chave_t b)
 {
   return s_igual((Str)a, (Str)b);
 }
 
+// Compara duas chaves em ordem lexicográfica.
 static bool chave_menor (chave_t a, chave_t b)
 {
   Str sa = (Str)a;
@@ -28,8 +30,77 @@ static bool chave_menor (chave_t a, chave_t b)
   return tam_a < tam_b;
 }
 
+// Verifica se uma Str representa um número válido.
+static bool eh_numero(Str s)
+{
+  int pontos = 0;
+  int digitos = 0;
+
+  for (int i = 0; i < s_tam(s); i++) {
+    unichar c = s_ch(s, i);
+
+    if (c >= '0' && c <= '9') {
+      digitos++;
+    } else if (c == '.') {
+      pontos++;
+      if (pontos > 1) {
+        return false;
+      }
+    } else {
+      return false;
+    }
+  }
+  return digitos > 0;
+}
+
+// Verifica se uma Str representa um nome válido de variável.
+static bool eh_nome(Str s)
+{
+  if (s_tam(s) == 0) {
+    return false;
+  }
+  unichar c = s_ch(s, 0);
+  if (!((c == '$') ||
+      (c >= 'a' && c <= 'z') ||
+      (c >= 'A' && c <= 'Z'))) {
+    return false;
+  }
+  for (int i = 1; i < s_tam(s); i++) {
+    c = s_ch(s, i);
+    if (!((c == '_' ) ||
+        (c >= 'a' && c <= 'z') ||
+        (c >= 'A' && c <= 'Z') ||
+        (c >= '0' && c <= '9'))) {
+      return false;
+    }
+  }
+  return true;
+}
+
+// Dicionário de variáveis mantido entre chamadas da calculadora.
 static Dicionário variaveis = NULL;
 
+// Obtém o valor numérico de um operando.
+// Se for variável, busca seu valor no dicionário.
+static bool valor_operando(Str s, double *valor)
+{
+  if (eh_numero(s)) {
+    *valor = s_número(s);
+    return true;
+  }
+  if (eh_nome(s)) {
+    valor_t v = dic_busca(variaveis, s);
+    if (v == VALOR_NÃO_EXISTE) {
+      return false;
+    }
+    Str sv = (Str)v;
+    *valor = s_número(sv);
+    return true;
+  }
+  return false;
+}
+
+// Separa a expressão em uma lista de tokens.
 Lista tokeniza(Str txt)
 {
   Lista tokens = l_cria();
@@ -65,7 +136,6 @@ Lista tokeniza(Str txt)
 
     if ((c >= 'a' && c <= 'z') ||
         (c >= 'A' && c <= 'Z') ||
-        c == '_' ||
         c == '$') {
 
       inicio = pos;
@@ -80,11 +150,10 @@ Lista tokeniza(Str txt)
               ((s_ch(txt, pos) >= '0') &&
                (s_ch(txt, pos) <= '9')) ||
 
-              s_ch(txt, pos) == '_' ||
-              s_ch(txt, pos) == '$')) {
+              s_ch(txt, pos) == '_')) {
 
-        pos++;
-      }
+              pos++;
+              }
 
       token = s_cria_substring(txt, inicio, pos - inicio);
       l_insere_fim(tokens, token);
@@ -100,7 +169,8 @@ Lista tokeniza(Str txt)
   return tokens;
 }
 
-
+// Calcula o valor de uma expressão utilizando pilhas de
+// operandos e operadores e mantém as variáveis no dicionário.
 Str calculadora(Str expressao)
 {
   Lista tokens = tokeniza(expressao);
@@ -129,9 +199,14 @@ Str calculadora(Str expressao)
             Str token_topo = l_topo(operadores);
             topo = s_ch(token_topo, 0);
           }
-          if (topo == 'V') {
+          if (c == '=') {
+            l_empilha(operadores, token);
+            processado = 1;
+          }
+          else if (topo == 'V') {
             if (c == ')') {
               erro = s_cria("#ERRO Parêntese não aberto.");
+              s_destroi(token);
               break;
             } else {
               l_empilha(operadores, token);
@@ -153,8 +228,18 @@ Str calculadora(Str expressao)
               Str direita = l_desempilha(operandos);
               Str esquerda = l_desempilha(operandos);
 
-              double numero_esquerda = s_número(esquerda);
-              double numero_direita = s_número(direita);
+              double numero_esquerda;
+              double numero_direita;
+
+              if (!valor_operando(esquerda, &numero_esquerda) ||
+                  !valor_operando(direita, &numero_direita)) {
+              erro = s_cria("#ERRO Variável não definida.");
+               s_destroi(esquerda);
+               s_destroi(direita);
+               s_destroi(op);
+
+               break;
+              }
 
               if (op_c == '+') {
                 double resultado = numero_esquerda + numero_direita;
@@ -211,8 +296,19 @@ Str calculadora(Str expressao)
               Str direita = l_desempilha(operandos);
               Str esquerda = l_desempilha(operandos);
 
-              double numero_esquerda = s_número(esquerda);
-              double numero_direita = s_número(direita);
+              double numero_esquerda;
+              double numero_direita;
+
+              if (!valor_operando(esquerda, &numero_esquerda) ||
+                  !valor_operando(direita, &numero_direita)) {
+
+                erro = s_cria("#ERRO Variável não definida.");
+
+                s_destroi(esquerda);
+                s_destroi(direita);
+                s_destroi(op);
+                break;
+              }
 
               if (op_c == '*') {
                 double resultado = numero_esquerda * numero_direita;
@@ -252,8 +348,19 @@ Str calculadora(Str expressao)
               Str direita = l_desempilha(operandos);
               Str esquerda = l_desempilha(operandos);
 
-              double numero_esquerda = s_número(esquerda);
-              double numero_direita = s_número(direita);
+              double numero_esquerda;
+              double numero_direita;
+
+              if (!valor_operando(esquerda, &numero_esquerda) ||
+                  !valor_operando(direita, &numero_direita)) {
+
+                erro = s_cria("#ERRO Variável não definida.");
+
+                s_destroi(esquerda);
+                s_destroi(direita);
+                s_destroi(op);
+                break;
+              }
 
               if (op_c == '^') {
                 double resultado = 1;
@@ -280,13 +387,69 @@ Str calculadora(Str expressao)
               processado = 1;
             }
           }
-          if (erro != NULL) {
-            break;
+          else if (topo == '=') {
+            if (c == ')') {
+              Str op = l_desempilha(operadores);
+              if (l_tam(operandos) < 2) {
+                erro = s_cria("#ERRO Operando insuficiente para operador.");
+                s_destroi(op);
+                break;
+              }
+              Str direita = l_desempilha(operandos);
+              Str esquerda = l_desempilha(operandos);
+
+              double valor;
+              if (eh_numero(direita)) {
+                 valor = s_número(direita);
+              } else {
+              valor_t encontrado = dic_busca(variaveis, direita);
+              if (encontrado ==  VALOR_NÃO_EXISTE) {
+                erro = s_cria("#ERRO Variável não definida.");
+                s_destroi(op);
+                s_destroi(esquerda);
+                s_destroi(direita);
+                break;
+              } else {
+              Str valor_str = (Str) encontrado;
+              valor = s_número(valor_str);
+              }
+              }
+            if (!eh_nome(esquerda)) {
+              erro = s_cria("#ERRO Nome de variável inválido.");
+              s_destroi(op);
+              s_destroi(esquerda);
+              s_destroi(direita);
+              break;
+            }
+
+            Str chave_copia = s_cria("");
+            s_copia(chave_copia, esquerda);
+            Str valor_str = s_cria_número(valor);
+            valor_t anterior = dic_insere(variaveis, chave_copia, valor_str);
+
+            if (anterior != VALOR_NÃO_EXISTE) {
+              s_destroi(chave_copia);
+              s_destroi((Str) anterior);
+            }
+            Str resultado_atribuicao = s_cria_número(valor);
+            l_empilha(operandos, resultado_atribuicao);
+
+            s_destroi(esquerda);
+            s_destroi(direita);
+            s_destroi(op);
+           } else {
+            l_empilha(operadores, token);
+            processado = 1;
+           }
           }
-        }
+        }  
         continue;
       }
-
+    }
+    if (!eh_numero(token) && !eh_nome(token)) {
+      erro = s_cria("#ERRO Token inválido.");
+      s_destroi(token);
+      break;
     }
     l_empilha(operandos, token);
   }
@@ -308,47 +471,98 @@ Str calculadora(Str expressao)
     Str direita = l_desempilha(operandos);
     Str esquerda = l_desempilha(operandos);
 
-    double numero_esquerda = s_número(esquerda);
-    double numero_direita = s_número(direita);
-
-    if (op_c == '+') {
-      double resultado = numero_esquerda + numero_direita;
-      Str resultado_str = s_cria_número(resultado);
-      l_empilha(operandos, resultado_str);
-
-    } else if (op_c == '-') {
-      double resultado = numero_esquerda - numero_direita;
-      Str resultado_str = s_cria_número(resultado);
-      l_empilha(operandos, resultado_str);
-
-    } else if (op_c == '*') {
-      double resultado = numero_esquerda * numero_direita;
-      Str resultado_str = s_cria_número(resultado);
-      l_empilha(operandos, resultado_str);
-
-    } else if (op_c == '/') {
-      if (numero_direita == 0) {
-        erro = s_cria("#ERRO Divisão por zero.");
+    if (op_c == '=') {
+      if (!eh_nome(esquerda)) {
+        erro = s_cria("#ERRO Nome de variável inválido.");
         s_destroi(op);
         s_destroi(esquerda);
         s_destroi(direita);
         break;
       }
-      double resultado = numero_esquerda / numero_direita;
-      Str resultado_str = s_cria_número(resultado);
-      l_empilha(operandos, resultado_str);
-
-    } else if (op_c == '^') {
-      double resultado = 1;
-      for (int i = 0; i < numero_direita; i++) {
-        resultado = resultado * numero_esquerda;
+      double valor;
+      if (eh_numero(direita)) {
+        valor = s_número(direita);
+      } else {
+        valor_t encontrado = dic_busca(variaveis, direita);
+        if (encontrado ==  VALOR_NÃO_EXISTE) {
+          erro = s_cria("#ERRO Variável não definida.");
+          s_destroi(op);
+          s_destroi(esquerda);
+          s_destroi(direita);
+          break;
+        } else {
+          Str valor_str = (Str) encontrado;
+          valor = s_número(valor_str);
+        }
       }
-      Str resultado_str = s_cria_número(resultado);
-      l_empilha(operandos, resultado_str);
-    }
-    s_destroi(esquerda);
-    s_destroi(direita);
-    s_destroi(op);
+      Str chave_copia = s_cria("");
+      s_copia(chave_copia, esquerda);
+      Str valor_str = s_cria_número(valor);
+      valor_t anterior = dic_insere(variaveis, chave_copia, valor_str); 
+
+      if (anterior != VALOR_NÃO_EXISTE) {
+        s_destroi(chave_copia);
+        s_destroi((Str) anterior);
+      }
+      Str resultado_atribuicao = s_cria_número(valor);
+      l_empilha(operandos, resultado_atribuicao);
+
+      } else {
+        
+        double numero_esquerda;
+        double numero_direita;
+
+        if (!valor_operando(esquerda, &numero_esquerda) ||
+            !valor_operando(direita, &numero_direita)) {
+
+          erro = s_cria("#ERRO Variável não definida.");
+          s_destroi(esquerda);
+          s_destroi(direita);
+          s_destroi(op);
+          
+          break;
+        }
+
+        if (op_c == '+') {
+          double resultado = numero_esquerda + numero_direita;
+          Str resultado_str = s_cria_número(resultado);
+          l_empilha(operandos, resultado_str);
+
+        } else if (op_c == '-') {
+          double resultado = numero_esquerda - numero_direita;
+          Str resultado_str = s_cria_número(resultado);
+          l_empilha(operandos, resultado_str);
+
+        } else if (op_c == '*') {
+          double resultado = numero_esquerda * numero_direita;
+          Str resultado_str = s_cria_número(resultado);
+          l_empilha(operandos, resultado_str);
+
+        } else if (op_c == '/') {
+          if (numero_direita == 0) {
+            erro = s_cria("#ERRO Divisão por zero.");
+            s_destroi(op);
+            s_destroi(esquerda);
+            s_destroi(direita);
+            break;
+          }
+          double resultado = numero_esquerda / numero_direita;
+          Str resultado_str = s_cria_número(resultado);
+          l_empilha(operandos, resultado_str);
+
+        } else if (op_c == '^') {
+          double resultado = 1;
+          for (int i = 0; i < numero_direita; i++) {
+            resultado = resultado * numero_esquerda;
+          }
+          Str resultado_str = s_cria_número(resultado);
+          l_empilha(operandos, resultado_str);
+        }
+      }
+
+      s_destroi(esquerda);
+      s_destroi(direita);
+      s_destroi(op);
   }
   if (erro == NULL) {
     while (!l_vazia(operadores)) {
@@ -368,9 +582,19 @@ Str calculadora(Str expressao)
       Str direita = l_desempilha(operandos);
       Str esquerda = l_desempilha(operandos);
 
-      double numero_esquerda = s_número(esquerda);
-      double numero_direita = s_número(direita);
+      double numero_esquerda;
+      double numero_direita;
 
+      if (!valor_operando(esquerda, &numero_esquerda) ||
+          !valor_operando(direita, &numero_direita)) {
+
+        erro = s_cria("#ERRO Variável não definida.");
+        s_destroi(esquerda);
+        s_destroi(direita);
+        s_destroi(op);
+
+        break;
+      }
 
       if (op_c == '+') {
         double resultado = numero_esquerda + numero_direita;

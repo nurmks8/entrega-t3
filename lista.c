@@ -1,5 +1,4 @@
 #include "lista.h"
-
 #include <stdlib.h>
 #include <assert.h>
 #include <stdio.h>
@@ -15,6 +14,7 @@ struct lista {
   int tamanho;
 };
 
+// Cria uma lista vazia com nó sentinela circular.
 Lista l_cria()
 {
    Lista l = malloc(sizeof(*l));
@@ -31,22 +31,26 @@ Lista l_cria()
    return l;
 }
 
+// Retorna a quantidade de elementos da lista.
 int l_tam(Lista l)
 {
   return l->tamanho;
 }
 
+// Informa se a lista está cheia.
 bool l_cheia (Lista l)
 {
    (void) l;
    return false;
 }
 
+// Informa se a lista está vazia.
 bool l_vazia(Lista l)
 {
   return l->tamanho == 0;
 }
 
+// Insere um elemento no início da lista.
 void l_insere_inicio(Lista l, dado_t d)
 {
    No *novo = malloc(sizeof(No));
@@ -63,6 +67,7 @@ void l_insere_inicio(Lista l, dado_t d)
    l->tamanho++;
 }
 
+// Insere um elemento no final da lista.
 void l_insere_fim(Lista l, dado_t d)
 {
    No *novo = malloc(sizeof(No));
@@ -79,6 +84,7 @@ void l_insere_fim(Lista l, dado_t d)
    l->tamanho++;
 }
 
+// Retorna o primeiro elemento da lista sem removê-lo.
 dado_t l_dado_inicio(Lista l)
 {
   if (l_vazia(l)) {
@@ -88,6 +94,7 @@ dado_t l_dado_inicio(Lista l)
   return l->sentinela->prox->dado;
 }
 
+// Retorna o último elemento da lista sem removê-lo.
 dado_t l_dado_fim(Lista l)
 {
   if (l_vazia(l)) {
@@ -97,6 +104,7 @@ dado_t l_dado_fim(Lista l)
   return l->sentinela->ant->dado;
 }
 
+// Remove e retorna o primeiro elemento da lista.
 dado_t l_remove_inicio(Lista l)
 {
    if (l_vazia(l)) {
@@ -116,6 +124,7 @@ dado_t l_remove_inicio(Lista l)
    return dado;
 }
 
+// Remove e retorna o último elemento da lista.
 dado_t l_remove_fim(Lista l)
 {
    if (l_vazia(l)) {
@@ -135,6 +144,7 @@ dado_t l_remove_fim(Lista l)
   return dado;
 }
 
+// Retorna o elemento armazenado em uma determinada posição.
 dado_t l_dado_pos(Lista l, int pos)
 {
   if (pos < 0 || pos >= l->tamanho) {
@@ -150,6 +160,7 @@ dado_t l_dado_pos(Lista l, int pos)
   return atual->dado;
 }
 
+// Insere um elemento em uma determinada posição da lista.
 void l_insere_pos(Lista l, dado_t d, int p)
 {
   if (p < 0 || p > l->tamanho) {
@@ -175,6 +186,7 @@ void l_insere_pos(Lista l, dado_t d, int p)
   l->tamanho++;
 }
 
+// Remove e retorna o elemento de uma determinada posição.
 dado_t l_remove_pos(Lista l, int pos)
 {
    if (pos < 0 || pos >= l->tamanho) {
@@ -197,6 +209,7 @@ dado_t l_remove_pos(Lista l, int pos)
   return dado;
 }
 
+// Destrói a lista e libera a memória usada pelos seus nós.
 void l_destroi(Lista l)
 {
     if (l == NULL) {
@@ -214,7 +227,7 @@ void l_destroi(Lista l)
    free(l);
 }
 
-
+// Imprime os elementos armazenados na lista.
 void l_imprime(Lista l)
 {
    No *atual = l->sentinela->prox;
@@ -227,36 +240,43 @@ void l_imprime(Lista l)
    }
 }
 
+// Retorna o primeiro elemento da lista.
 dado_t l_primeiro(Lista l)
 {
   return l_dado_inicio(l);
 }
 
+// Insere um elemento na lista.
 void l_insere(Lista l, dado_t d)
 {
   l_insere_fim(l, d);
 }
 
+// Remove e retorna um elemento da lista.
 dado_t l_remove(Lista l)
 {
   return l_remove_inicio(l);
 }
 
+// Retorna o elemento do topo da pilha sem removê-lo.
 dado_t l_topo(Lista l)
 {
   return l_dado_inicio(l);
 }
 
+// Empilha um elemento no topo da pilha.
 void l_empilha(Lista l, dado_t d)
 {
   l_insere_inicio(l, d);
 }
 
+// Desempilha e retorna o elemento do topo da pilha.
 dado_t l_desempilha(Lista l)
 {
   return l_remove_inicio(l);
 }
 
+// Cria uma lista com as partes de uma Str separadas pelos caracteres de sep.
 Lista l_cria_separando(Str s, Str sep)
 {
   Lista lista = l_cria();

@@ -87,6 +87,7 @@ if (nchars == -1) {
   return s;
 }
 
+// Cria uma Str a partir de um valor numérico.
 Str s_cria_número(double num)
 {
     char texto[400];
@@ -96,6 +97,7 @@ Str s_cria_número(double num)
     return s_cria(texto);
 }
 
+// Cria uma Str unindo os elementos da lista, separados por sep.
 Str s_cria_unindo(Lista l, Str sep)
 {
    Str resultado = s_cria("");
@@ -230,6 +232,7 @@ unichar s_ch(Str_c s, int pos)
   return c;
 }
 
+// Converte o conteúdo de uma Str para um valor numérico.
 double s_número(Str_c s)
 {
     double num;
@@ -740,5 +743,3 @@ if (s != NULL && s->nbytes > 0) {
 }
   fclose(arq);
 }
-
-// vim: foldmethod=marker shiftwidth=2
