@@ -139,6 +139,7 @@ Lista tokeniza(Str txt)
         c == '$') {
 
       inicio = pos;
+      pos++;
 
       while (pos < s_tam(txt) &&
              (((s_ch(txt, pos) >= 'a') &&

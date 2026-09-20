@@ -1,0 +1,38 @@
+5
+6
+42
+4
+8
+14
+20
+4
+512
+15
+5
+5.25
+14
+10
+12
+10
+30
+5
+7
+8
+4
+5
+10
+20
+10
+7
+8
+#ERRO Divisão por zero.
+#ERRO Parêntese não fechado.
+#ERRO Parêntese não aberto.
+#ERRO Operando insuficiente para operador.
+#ERRO Nome de variável inválido.
+#ERRO Variável não definida.
+#ERRO Token inválido.
+#ERRO Token inválido.
+#ERRO Token inválido.
+#ERRO Token inválido.
+#ERRO Expressão inválida.
