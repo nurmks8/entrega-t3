@@ -183,7 +183,7 @@ Str calculadora(Str expressao)
     variaveis = dic_cria(chave_menor, chave_igual);
   }
 
-  while (!l_vazia(tokens)) {
+  while (!l_vazia(tokens) && erro == NULL) {
     Str token = l_remove_inicio(tokens);
     if (s_tam(token) == 1) {
       unichar c = s_ch(token, 0);
@@ -224,6 +224,8 @@ Str calculadora(Str expressao)
               unichar op_c = s_ch(op, 0);
               if (l_tam(operandos) < 2) {
                 erro = s_cria("#ERRO Operando insuficiente para operador.");
+                s_destroi(op);
+                s_destroi(token);
                 break;
               }
               Str direita = l_desempilha(operandos);
@@ -238,7 +240,7 @@ Str calculadora(Str expressao)
                s_destroi(esquerda);
                s_destroi(direita);
                s_destroi(op);
-
+               s_destroi(token);
                break;
               }
 
@@ -260,6 +262,10 @@ Str calculadora(Str expressao)
               } else if (op_c == '/') {
                 if (numero_direita == 0) {
                   erro = s_cria("#ERRO Divisão por zero.");
+                  s_destroi(esquerda);
+                  s_destroi(direita);
+                  s_destroi(op);
+                  s_destroi(token);
                   break;
                 }
                 double resultado = numero_esquerda / numero_direita;
@@ -291,6 +297,8 @@ Str calculadora(Str expressao)
               unichar op_c = s_ch(op, 0);
               if (l_tam(operandos) < 2) {
                 erro = s_cria("#ERRO Operando insuficiente para operador.");
+                s_destroi(op);
+                s_destroi(token);
                 break;
               }
 
@@ -302,12 +310,11 @@ Str calculadora(Str expressao)
 
               if (!valor_operando(esquerda, &numero_esquerda) ||
                   !valor_operando(direita, &numero_direita)) {
-
                 erro = s_cria("#ERRO Variável não definida.");
-
                 s_destroi(esquerda);
                 s_destroi(direita);
                 s_destroi(op);
+                s_destroi(token);
                 break;
               }
 
@@ -320,6 +327,10 @@ Str calculadora(Str expressao)
               } else if (op_c == '/') {
                 if (numero_direita == 0) {
                   erro = s_cria("#ERRO Divisão por zero.");
+                  s_destroi(esquerda);
+                  s_destroi(direita);
+                  s_destroi(op);
+                  s_destroi(token);
                   break;
                 }
                 double resultado = numero_esquerda / numero_direita;
@@ -343,6 +354,8 @@ Str calculadora(Str expressao)
               unichar op_c = s_ch(op, 0);
               if (l_tam(operandos) < 2) {
                 erro = s_cria("#ERRO Operando insuficiente para operador.");
+                s_destroi(op);
+                s_destroi(token);
                 break;
               }
 
@@ -360,6 +373,7 @@ Str calculadora(Str expressao)
                 s_destroi(esquerda);
                 s_destroi(direita);
                 s_destroi(op);
+                s_destroi(token);
                 break;
               }
 
@@ -394,6 +408,7 @@ Str calculadora(Str expressao)
               if (l_tam(operandos) < 2) {
                 erro = s_cria("#ERRO Operando insuficiente para operador.");
                 s_destroi(op);
+                s_destroi(token);
                 break;
               }
               Str direita = l_desempilha(operandos);
@@ -409,6 +424,7 @@ Str calculadora(Str expressao)
                 s_destroi(op);
                 s_destroi(esquerda);
                 s_destroi(direita);
+                s_destroi(token);
                 break;
               } else {
               Str valor_str = (Str) encontrado;
@@ -420,6 +436,7 @@ Str calculadora(Str expressao)
               s_destroi(op);
               s_destroi(esquerda);
               s_destroi(direita);
+              s_destroi(token);
               break;
             }
 
@@ -454,7 +471,7 @@ Str calculadora(Str expressao)
     }
     l_empilha(operandos, token);
   }
-  while (!l_vazia(operadores)) {
+  while (erro == NULL && !l_vazia(operadores)) {
     Str op = l_desempilha(operadores);
     unichar op_c = s_ch(op, 0);
     if (op_c == '(') {
@@ -542,9 +559,9 @@ Str calculadora(Str expressao)
         } else if (op_c == '/') {
           if (numero_direita == 0) {
             erro = s_cria("#ERRO Divisão por zero.");
-            s_destroi(op);
             s_destroi(esquerda);
             s_destroi(direita);
+            s_destroi(op);
             break;
           }
           double resultado = numero_esquerda / numero_direita;
@@ -565,78 +582,7 @@ Str calculadora(Str expressao)
       s_destroi(direita);
       s_destroi(op);
   }
-  if (erro == NULL) {
-    while (!l_vazia(operadores)) {
-      Str op = l_desempilha(operadores);
-      unichar op_c = s_ch(op, 0);
-      if (op_c == '(') {
-        erro = s_cria("#ERRO Parêntese não fechado.");
-        s_destroi(op);
-        break;
-      }
-      if (l_tam(operandos) < 2) {
-        erro = s_cria("#ERRO Operando insuficiente para operador.");
-        s_destroi(op);
-        break;
-      }
-
-      Str direita = l_desempilha(operandos);
-      Str esquerda = l_desempilha(operandos);
-
-      double numero_esquerda;
-      double numero_direita;
-
-      if (!valor_operando(esquerda, &numero_esquerda) ||
-          !valor_operando(direita, &numero_direita)) {
-
-        erro = s_cria("#ERRO Variável não definida.");
-        s_destroi(esquerda);
-        s_destroi(direita);
-        s_destroi(op);
-
-        break;
-      }
-
-      if (op_c == '+') {
-        double resultado = numero_esquerda + numero_direita;
-        Str resultado_str = s_cria_número(resultado);
-        l_empilha(operandos, resultado_str);
-
-      } else if (op_c == '-') {
-        double resultado = numero_esquerda - numero_direita;
-        Str resultado_str = s_cria_número(resultado);
-        l_empilha(operandos, resultado_str);
-
-      } else if (op_c == '*') {
-        double resultado = numero_esquerda * numero_direita;
-        Str resultado_str = s_cria_número(resultado);
-        l_empilha(operandos, resultado_str);
-
-      } else if (op_c == '/') {
-        if (numero_direita == 0) {
-          erro = s_cria("#ERRO Divisão por zero.");
-          s_destroi(op);
-          s_destroi(esquerda);
-          s_destroi(direita);
-          break;
-        }
-        double resultado = numero_esquerda / numero_direita;
-        Str resultado_str = s_cria_número(resultado);
-        l_empilha(operandos, resultado_str);
-
-      } else if (op_c == '^') {
-        double resultado = 1;
-        for (int i = 0; i < numero_direita; i++) {
-          resultado = resultado * numero_esquerda;
-        }
-        Str resultado_str = s_cria_número(resultado);
-        l_empilha(operandos, resultado_str);
-      }
-      s_destroi(esquerda);
-      s_destroi(direita);
-      s_destroi(op);
-    }
-  }
+ 
   if (erro == NULL && l_tam(operandos) != 1) {
     erro = s_cria("#ERRO Expressão inválida.");
   }
